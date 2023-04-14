@@ -1,2 +1,4 @@
 # computer-graphics
-Implementation from Computer Graphics from Scratch
+
+Implementing the concepts from [Computer Graphics from
+Scratch](https://www.gabrielgambetta.com/computer-graphics-from-scratch/index.html).
