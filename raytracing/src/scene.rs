@@ -9,7 +9,7 @@ pub struct Scene {
     pub spheres: Vec<Sphere>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Light {
     Ambient { intensity: f64 },
     Point { intensity: f64, position: Vec3 },
@@ -17,18 +17,18 @@ pub enum Light {
 }
 
 /// A sphere in a scene.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f64,
     pub color: Color,
-    pub specular: i32, // XXX use Option
+    pub specular: Option<i32>,
 }
 
 impl Sphere {
     /// Return the values `t` where the ray `o + t*d` intersects the sphere.
     ///
-    /// Returns 0, 1, or 2 values. If it's 2, they will be sorted.
+    /// Returns 0, 1, or 2 values in a sorted vector.
     pub fn intersect_ray(&self, o: Vec3, d: Vec3) -> Vec<f64> {
         let r = self.radius;
         let co = o - self.center;
@@ -69,7 +69,7 @@ mod tests {
             center: Vec3::new(0.0, 0.0, 3.0),
             radius: 1.0,
             color: Color::BLACK,
-            specular: -1,
+            specular: None,
         };
 
         // simple case
