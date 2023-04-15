@@ -18,10 +18,11 @@ impl Raytracer {
         let o = Vec3::new(0.0, 0.0, 0.0);
         let cw = self.canvas_width as i32;
         let ch = self.canvas_height as i32;
+        let recursion_depth = 3;
         for x in (-cw / 2)..(cw / 2) {
             for y in (-ch / 2)..(ch / 2) {
                 let d = self.canvas_to_viewport(x, y);
-                let color = self.trace_ray(o, d, 1.0, f64::INFINITY);
+                let color = self.trace_ray(o, d, 1.0, f64::INFINITY, recursion_depth);
                 canvas.put_pixel(x, y, color);
             }
         }
@@ -58,12 +59,29 @@ impl Raytracer {
         closest
     }
 
-    fn trace_ray(&self, o: Vec3, d: Vec3, t_min: f64, t_max: f64) -> Color {
+    fn trace_ray(&self, o: Vec3, d: Vec3, t_min: f64, t_max: f64, recursion_depth: i32) -> Color {
         let closest = self.closest_intersection(o, d, t_min, t_max);
         closest.map_or(self.scene.background_color, |(sphere, t)| {
+            // compute local color
             let p = o + t * d; // point where the ray intersects the sphere
             let n = (p - sphere.center).normalized(); // normal
-            sphere.color * self.compute_lighting(p, n, -d, sphere.specular)
+            let local_color = sphere.color * self.compute_lighting(p, n, -d, sphere.specular);
+
+            // check if we need the reflective color
+            let r = sphere.reflective;
+            if recursion_depth <= 0 || r <= 0.0 {
+                return local_color;
+            }
+
+            // compute reflected color
+            let reflected_color = self.trace_ray(
+                p,
+                reflect_ray(-d, n),
+                0.001,
+                f64::INFINITY,
+                recursion_depth - 1,
+            );
+            local_color * (1.0 - r) + reflected_color * r
         })
     }
 
@@ -100,7 +118,7 @@ impl Raytracer {
 
                 // specular
                 let specular = specular.map_or(0.0, |s| {
-                    let r = 2.0 * n * n.dot(l) - l;
+                    let r = reflect_ray(l, n);
                     let r_dot_v = r.dot(v);
                     if r_dot_v > 0.0 {
                         intensity * (r_dot_v / (r.len() * v.len())).powi(s)
@@ -114,4 +132,8 @@ impl Raytracer {
         }
         i
     }
+}
+
+fn reflect_ray(r: Vec3, n: Vec3) -> Vec3 {
+    2.0 * n * n.dot(r) - r
 }

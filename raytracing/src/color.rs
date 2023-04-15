@@ -1,7 +1,7 @@
 //! Defines a type for color values and some operations on it.
 
 use crate::approx::ApproxEq;
-use std::ops::Mul;
+use std::ops::{Add, Mul};
 
 /// A color with red, green, and blue values. The values should be between 0 and 1; other values
 /// will be clamped to the [0, 1] range.
@@ -22,6 +22,14 @@ impl Color {
 impl ApproxEq for Color {
     fn approx_eq(self, other: Color) -> bool {
         self.0.approx_eq(other.0) && self.1.approx_eq(other.1) && self.2.approx_eq(other.2)
+    }
+}
+
+impl Add<Color> for Color {
+    type Output = Color;
+
+    fn add(self, other: Color) -> Color {
+        Color(self.0 + other.0, self.1 + other.1, self.2 + other.2)
     }
 }
 
@@ -90,7 +98,9 @@ mod tests {
     #[test]
     fn color_ops() {
         let c = Color(0.1, 0.2, 0.3);
+        let d = Color(0.2, 0.3, 0.4);
         assert!((2.0 * c).approx_eq(Color(0.2, 0.4, 0.6)));
         assert!((c * 2.0).approx_eq(Color(0.2, 0.4, 0.6)));
+        assert!((c + d).approx_eq(Color(0.3, 0.5, 0.7)));
     }
 }

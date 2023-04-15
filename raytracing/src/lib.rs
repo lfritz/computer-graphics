@@ -19,7 +19,8 @@ pub fn run() {
 
 fn raytracing() -> io::Result<()> {
     let scene = Scene {
-        background_color: Color(0.0, 0.71, 0.89),
+        background_color: Color::BLACK,
+        //background_color: Color(0.0, 0.71, 0.89),
         lights: vec![
             Light::Ambient { intensity: 0.2 },
             Light::Point {
@@ -37,24 +38,28 @@ fn raytracing() -> io::Result<()> {
                 radius: 1.0,
                 color: Color(1.0, 0.0, 0.0),
                 specular: Some(500),
+                reflective: 0.2,
             },
             Sphere {
                 center: Vec3::new(2.0, 0.0, 4.0),
                 radius: 1.0,
                 color: Color(0.0, 0.0, 1.0),
                 specular: Some(500),
+                reflective: 0.3,
             },
             Sphere {
                 center: Vec3::new(-2.0, 0.0, 4.0),
                 radius: 1.0,
                 color: Color(0.0, 1.0, 0.0),
                 specular: Some(10),
+                reflective: 0.4,
             },
             Sphere {
                 center: Vec3::new(0.0, -5001.0, 0.0),
                 radius: 5000.0,
                 color: Color(1.0, 1.0, 0.0),
                 specular: Some(1000),
+                reflective: 0.5,
             },
         ],
     };

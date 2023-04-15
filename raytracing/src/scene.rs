@@ -23,6 +23,7 @@ pub struct Sphere {
     pub radius: f64,
     pub color: Color,
     pub specular: Option<i32>,
+    pub reflective: f64, // goes from 0.0 (not reflective) to 1.0 (perfect mirror)
 }
 
 impl Sphere {
@@ -70,6 +71,7 @@ mod tests {
             radius: 1.0,
             color: Color::BLACK,
             specular: None,
+            reflective: 0.0,
         };
 
         // simple case
