@@ -42,8 +42,12 @@ impl Canvas {
     }
 
     /// Save the image to a file in binary PPM format.
-    pub fn save(&self, path: &str) -> io::Result<()> {
+    pub fn save_to_ppm(&self, path: &str) -> io::Result<()> {
         let mut f = File::create(path)?;
+        self.write_to_ppm(&mut f)
+    }
+
+    fn write_to_ppm(&self, f: &mut dyn Write) -> io::Result<()> {
         writeln!(f, "P6")?;
         writeln!(f, "{} {}", self.width, self.height)?;
         writeln!(f, "255")?;
@@ -91,16 +95,8 @@ mod tests {
         assert!(!a.approx_eq(&b));
     }
 
-    #[test]
-    fn canvas_put_pixel() {
-        let mut c = Canvas::new(4, 2);
-
-        // set the four corner pixels
-        c.put_pixel(-2, -1, Color(1.0, 0.0, 0.0)); // bottom left
-        c.put_pixel(1, -1, Color(0.0, 1.0, 0.0)); // bottom right
-        c.put_pixel(-2, 0, Color(0.0, 0.0, 1.0)); // top left
-        c.put_pixel(1, 0, Color(1.0, 1.0, 1.0)); // top right
-        let want = Canvas {
+    fn sample_canvas() -> Canvas {
+        Canvas {
             width: 4,
             height: 2,
             pixels: vec![
@@ -113,7 +109,19 @@ mod tests {
                 Color::BLACK,
                 Color(0.0, 1.0, 0.0),
             ],
-        };
+        }
+    }
+
+    #[test]
+    fn canvas_put_pixel() {
+        let mut c = Canvas::new(4, 2);
+
+        // set the four corner pixels
+        c.put_pixel(-2, -1, Color(1.0, 0.0, 0.0)); // bottom left
+        c.put_pixel(1, -1, Color(0.0, 1.0, 0.0)); // bottom right
+        c.put_pixel(-2, 0, Color(0.0, 0.0, 1.0)); // top left
+        c.put_pixel(1, 0, Color(1.0, 1.0, 1.0)); // top right
+        let want = sample_canvas();
         assert!(c.approx_eq(&want));
 
         // set some pixels that are out of range -- should have no effect
@@ -122,5 +130,27 @@ mod tests {
         c.put_pixel(0, -2, Color(0.5, 0.5, 0.5));
         c.put_pixel(0, 1, Color(0.5, 0.5, 0.5));
         assert!(c.approx_eq(&want));
+    }
+
+    #[test]
+    fn canvas_write_to_ppm() -> io::Result<()> {
+        // write PPM to vector
+        let c = sample_canvas();
+        let mut v: Vec<u8> = Vec::new();
+        c.write_to_ppm(&mut v)?;
+
+        // prepare expected data
+        let header = "P6\n4 2\n255\n";
+        let mut data = vec![
+            0, 0, 0xff, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0xff, // first row
+            0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0, // second row
+        ];
+        let mut want = Vec::new();
+        want.append(&mut header.as_bytes().to_vec());
+        want.append(&mut data);
+
+        // compare
+        assert_eq!(v, want);
+        Ok(())
     }
 }
