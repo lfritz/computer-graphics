@@ -1,7 +1,7 @@
 //! Defines a type for color values and some operations on it.
 
 use crate::approx::ApproxEq;
-use std::ops::{Add, Mul};
+use std::ops::{Add, AddAssign, Mul};
 
 /// A color with red, green, and blue values. The values should be between 0 and 1; other values
 /// will be clamped to the [0, 1] range.
@@ -30,6 +30,14 @@ impl Add<Color> for Color {
 
     fn add(self, other: Color) -> Color {
         Color(self.0 + other.0, self.1 + other.1, self.2 + other.2)
+    }
+}
+
+impl AddAssign<Color> for Color {
+    fn add_assign(&mut self, other: Color) {
+        self.0 += other.0;
+        self.1 += other.1;
+        self.2 += other.2;
     }
 }
 

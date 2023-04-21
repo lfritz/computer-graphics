@@ -23,25 +23,33 @@ impl Raytracer {
         let cw = self.canvas_width as i32;
         let ch = self.canvas_height as i32;
         let recursion_depth = 3;
+        let offset = vec![-0.4, -0.2, 0.0, 0.2, 0.4];
         for x in (-cw / 2)..(cw / 2) {
             for y in (-ch / 2)..(ch / 2) {
-                let direction = self.canvas_to_viewport(x, y);
-                let color = trace_ray(
-                    &self.scene,
-                    Ray { origin, direction },
-                    1.0..f64::INFINITY,
-                    recursion_depth,
-                );
-                canvas.put_pixel(x, y, color);
+                let mut average_color = Color::BLACK;
+                for x_offset in offset.iter() {
+                    for y_offset in offset.iter() {
+                        let direction =
+                            self.canvas_to_viewport(x as f64 + x_offset, y as f64 + y_offset);
+                        let color = trace_ray(
+                            &self.scene,
+                            Ray { origin, direction },
+                            1.0..f64::INFINITY,
+                            recursion_depth,
+                        );
+                        average_color += 0.04 * color;
+                    }
+                }
+                canvas.put_pixel(x, y, average_color);
             }
         }
         canvas
     }
 
-    fn canvas_to_viewport(&self, x: i32, y: i32) -> Vec3 {
+    fn canvas_to_viewport(&self, x: f64, y: f64) -> Vec3 {
         Vec3 {
-            x: (x as f64) * self.viewport_width / (self.canvas_width as f64),
-            y: (y as f64) * self.viewport_height / (self.canvas_height as f64),
+            x: x * self.viewport_width / (self.canvas_width as f64),
+            y: y * self.viewport_height / (self.canvas_height as f64),
             z: self.distance_to_projection_plane,
         }
     }
