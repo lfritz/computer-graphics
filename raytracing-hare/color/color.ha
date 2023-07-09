@@ -12,17 +12,17 @@ export const WHITE = color{red=0xff, green=0xff, blue=0xff};
 
 // Returns true if a and b are equal.
 export fn eq(a: color, b: color) bool = {
-	return a.red == b.red &&
-		a.green == b.green &&
-		a.blue == b.blue;
+	return a.red   == b.red &&
+	       a.green == b.green &&
+	       a.blue  == b.blue;
 };
 
 @test fn eq() void = {
 	const a = color{red=0x01, green=0x02, blue=0x03};
-	let b = a;               assert(eq(a, b));
-	let b = a; a.red   += 1; assert(!eq(a, b));
-	let b = a; a.green += 1; assert(!eq(a, b));
-	let b = a; a.blue  += 1; assert(!eq(a, b));
+	const b = a;               assert(eq(a, b));
+	const b = a; b.red   += 1; assert(!eq(a, b));
+	const b = a; b.green += 1; assert(!eq(a, b));
+	const b = a; b.blue  += 1; assert(!eq(a, b));
 };
 
 // Add the RGB values of two colors, clamping values to the range [0, 255].

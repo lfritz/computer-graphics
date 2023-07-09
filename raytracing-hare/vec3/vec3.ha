@@ -7,6 +7,46 @@ export type vec3 = struct {
 	z: f64,
 };
 
+// Return a new vector with the given values.
+export fn new(x: f64, y: f64, z: f64) vec3 = {
+	return vec3{x=x, y=y, z=z};
+};
+
+// Compare two vectors for equality.
+export fn eq(a: vec3, b: vec3) bool = {
+	return a.x == b.x &&
+	       a.y == b.y &&
+	       a.z == b.z;
+};
+
+@test fn eq() void = {
+	const a = vec3{x=1.0, y=2.0, z=3.0};
+	const b = a;             assert(eq(a, b));
+	const b = a; b.x += 0.5; assert(!eq(a, b));
+	const b = a; b.y += 0.5; assert(!eq(a, b));
+	const b = a; b.z += 0.5; assert(!eq(a, b));
+};
+
+// Returns whether the two vectors are within math::STANDARD_TOL of each other in each dimension.
+export fn isclose(a: vec3, b: vec3) bool = {
+	return math::isclose(a.x, b.x) &&
+	       math::isclose(a.y, b.y) &&
+	       math::isclose(a.z, b.z);
+};
+
+@test fn isclose() void = {
+	const small = 0.5 * math::STANDARD_TOL;
+	const large = 2.0 * math::STANDARD_TOL;
+	const a = new(1.0, 2.0, 3.0);
+	const b = a;               assert(isclose(a, b));
+	const b = a; b.x -= small; assert(isclose(a, b));
+	const b = a; b.y += small; assert(isclose(a, b));
+	const b = a; b.z -= small; assert(isclose(a, b));
+	const b = a; b.x -= large; assert(!isclose(a, b));
+	const b = a; b.y += large; assert(!isclose(a, b));
+	const b = a; b.z -= large; assert(!isclose(a, b));
+};
+
 // Add two vectors.
 export fn add(a: vec3, b: vec3) vec3 = {
 	return vec3{

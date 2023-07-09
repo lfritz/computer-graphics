@@ -49,12 +49,11 @@ export fn eq(a: *canvas, b: *canvas) bool = {
 	assert(!eq(&a, &b));
 };
 
-// Sets the pixel at (x, y) in the canvas. This uses a coordinate system where (0, 0) is in the
-// center of the canvas, x goes from left to right, and y from bottom to top.
+// Sets the pixel at (x, y) in the canvas. This uses a coordinate system where (0, 0) is the
+// bottom-left pixel and x goes from left to right, and y from bottom to top.
 export fn putpixel(c: *canvas, x: int, y: int, col: color::color) void = {
-	const sx = ((c.width: int  / 2) + x): size;
-	const sy = ((c.height: int / 2) + y): size;
-	const base = ((sy * c.width) + sx) * 3;
+	const y = c.height: int - 1 - y;
+	const base = ((y * c.width: int) + x) * 3;
 	c.data[base + 0] = col.red;
 	c.data[base + 1] = col.green;
 	c.data[base + 2] = col.blue;
@@ -64,12 +63,12 @@ export fn putpixel(c: *canvas, x: int, y: int, col: color::color) void = {
 // lower-case letters, which makes some of the test code a lot simpler.
 fn testcanvas() canvas = {
 	let c = new(3, 2);
-	putpixel(&c, -1, -1, color::color{red=0x61, green=0x62, blue=0x63});
-	putpixel(&c,  0, -1, color::color{red=0x64, green=0x65, blue=0x66});
-	putpixel(&c,  1, -1, color::color{red=0x67, green=0x68, blue=0x69});
-	putpixel(&c, -1,  0, color::color{red=0x6a, green=0x6b, blue=0x6c});
-	putpixel(&c,  0,  0, color::color{red=0x6d, green=0x6e, blue=0x6f});
-	putpixel(&c,  1,  0, color::color{red=0x70, green=0x71, blue=0x72});
+	putpixel(&c, 0, 1, color::color{red=0x61, green=0x62, blue=0x63});
+	putpixel(&c, 1, 1, color::color{red=0x64, green=0x65, blue=0x66});
+	putpixel(&c, 2, 1, color::color{red=0x67, green=0x68, blue=0x69});
+	putpixel(&c, 0, 0, color::color{red=0x6a, green=0x6b, blue=0x6c});
+	putpixel(&c, 1, 0, color::color{red=0x6d, green=0x6e, blue=0x6f});
+	putpixel(&c, 2, 0, color::color{red=0x70, green=0x71, blue=0x72});
 	return c;
 };
 
