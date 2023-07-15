@@ -7,6 +7,11 @@ export type color = struct {
 	blue: u8,
 };
 
+// Return a new color with the given values.
+export fn new(red: u8, green: u8, blue: u8) color = {
+	return color{red=red, green=green, blue=blue};
+};
+
 export const BLACK = color{red=0, green=0, blue=0};
 export const WHITE = color{red=0xff, green=0xff, blue=0xff};
 
