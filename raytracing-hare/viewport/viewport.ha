@@ -4,7 +4,7 @@ use vec3;
 
 // The viewport is a rectangle in 3-D space through which we're looking at the scene. Pixels on
 // the canvas can be mapped to points in the viewport.
-type viewport = struct {
+export type viewport = struct {
 	c: canvas::canvas,
 	f: f64, // ratio of viewport coordinates : canvas coordinates
 	d: f64, // distance from origin
@@ -13,7 +13,7 @@ type viewport = struct {
 // Returns a new viewport for the given canvas, where w is the viewport's width and d is the
 // distance from the origin. The viewport's height is calculated so the viewport's aspect ratio
 // matches the canvas's.
-fn new_viewport(c: canvas::canvas, w: f64, d: f64) viewport = {
+export fn new(c: canvas::canvas, w: f64, d: f64) viewport = {
 	return viewport{
 		c=c,
 		f=w / c.width: f64,
@@ -21,10 +21,10 @@ fn new_viewport(c: canvas::canvas, w: f64, d: f64) viewport = {
 	};
 };
 
-@test fn new_viewport() void = {
+@test fn new() void = {
 	const c = canvas::new(3, 2);
 	defer canvas::finish(&c);
-	const v = new_viewport(c, 6.0, 2.5);
+	const v = new(c, 6.0, 2.5);
 	assert(v.f == 2.0);
 	assert(viewport_width(&v) == 6.0);
 	assert(viewport_height(&v) == 4.0);
@@ -51,7 +51,7 @@ fn canvas_to_viewport(v: *viewport, cx: int, cy: int) vec3::vec3 = {
 @test fn canvas_to_viewport() void = {
 	const c = canvas::new(3, 2);
 	defer canvas::finish(&c);
-	const v = new_viewport(c, 6.0, 2.5);
+	const v = new(c, 6.0, 2.5);
 	const cases: [](int, int, vec3::vec3) = [
 		(0, 0, vec3::new(-2.0, -1.0, 2.5)),
 		(1, 0, vec3::new( 0.0, -1.0, 2.5)),
@@ -70,14 +70,14 @@ fn canvas_to_viewport(v: *viewport, cx: int, cy: int) vec3::vec3 = {
 
 // An iterator over the pixels in the canvas and corresponding points in the viewport, going
 // left-to-right, then top-to-bottom.
-type iterator = struct {
+export type iterator = struct {
 	v: *viewport,
 	x: int,
 	y: int,
 };
 
 // A point in the canvas / the viewport.
-type point = struct {
+export type point = struct {
 	cx: int,
 	cy: int,
 	on_viewport: vec3::vec3,
@@ -85,12 +85,12 @@ type point = struct {
 
 // Returns a new iterator. Call [[next]] in a loop to get the pixels on the canvas and corresponding
 // points in the viewport.
-fn iterate(v: *viewport) iterator = {
+export fn iterate(v: *viewport) iterator = {
 	return iterator{v=v, x=0, y=v.c.height: int - 1};
 };
 
 // Returns the next point on the viewport.
-fn next(i: *iterator) (point | void) = {
+export fn next(i: *iterator) (point | void) = {
 	if (i.y < 0) {
 		return;
 	};
@@ -111,7 +111,7 @@ fn next(i: *iterator) (point | void) = {
 	// create 3x2 canvas, viewport, iterator
 	const c = canvas::new(3, 2);
 	defer canvas::finish(&c);
-	const v = new_viewport(c, 6.0, 2.5);
+	const v = new(c, 6.0, 2.5);
 	const it = iterate(&v);
 
 	// check the first one

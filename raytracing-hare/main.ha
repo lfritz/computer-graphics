@@ -7,6 +7,7 @@ use os;
 use canvas;
 use color;
 use vec3;
+use viewport;
 
 // Returns whether the slices' corresponding elements are within math::STANDARD_TOL of each other.
 fn isclose_f64s(a: []f64, b: []f64) bool = {
@@ -86,7 +87,7 @@ fn smallest_within_range(k1: f64, k2: f64, kmin: f64, kmax: f64) (f64 | void) = 
 
 // Finds the points where the ray and sphere intersect. It returns the smallest value k for which
 // r.o + k * r.d is on the sphere's surface and kmin <= k <= kmax.
-fn intersect_new(r: *ray, s: *sphere, kmin: f64, kmax: f64) (f64 | void) = {
+fn intersect(r: *ray, s: *sphere, kmin: f64, kmax: f64) (f64 | void) = {
 	const co = vec3::sub(r.o, s.center);
 	const a = vec3::dot(r.d, r.d);
 	const b = 2.0 * vec3::dot(co, r.d);
@@ -101,7 +102,7 @@ fn intersect_new(r: *ray, s: *sphere, kmin: f64, kmax: f64) (f64 | void) = {
 	return smallest_within_range(k1, k2, kmin, kmax);
 };
 
-@test fn intersect_new() void = {
+@test fn intersect() void = {
 	const s = sphere{
 		center=vec3::new(0.0, 0.0, 2.0),
 		radius=1.0,
@@ -110,20 +111,20 @@ fn intersect_new(r: *ray, s: *sphere, kmin: f64, kmax: f64) (f64 | void) = {
 
 	// ray doesn't intersect the sphere
 	const r = ray{o=vec3::new(0.0, 1.5, 0.0), d=vec3::new(0.0, 0.0, 1.0)};
-	assert(intersect_new(&r, &s, 0.0, 8.0) is void);
+	assert(intersect(&r, &s, 0.0, 8.0) is void);
 
 	// ray intersects the sphere at (0.0, 1.0, 2.0)
 	const r = ray{o=vec3::new(0.0, 1.0, 0.0), d=vec3::new(0.0, 0.0, 1.0)};
-	assert(intersect_new(&r, &s, 0.0, 1.5) is void);
-	assert(intersect_new(&r, &s, 2.5, 8.0) is void);
-	assert(math::isclose(2.0, intersect_new(&r, &s, 0.0, 8.0) as f64));
+	assert(intersect(&r, &s, 0.0, 1.5) is void);
+	assert(intersect(&r, &s, 2.5, 8.0) is void);
+	assert(math::isclose(2.0, intersect(&r, &s, 0.0, 8.0) as f64));
 
 	// ray intersects the sphere at (0.0, 0.0, 1.0) and (0.0, 0.0, 3.0)
 	const r = ray{o=vec3::new(0.0, 0.0, 0.0), d=vec3::new(0.0, 0.0, 1.0)};
-	assert(intersect_new(&r, &s, 0.0, 0.5) is void);
-	assert(intersect_new(&r, &s, 3.5, 8.0) is void);
-	assert(math::isclose(1.0, intersect_new(&r, &s, 0.0, 2.5) as f64));
-	assert(math::isclose(3.0, intersect_new(&r, &s, 1.5, 8.0) as f64));
+	assert(intersect(&r, &s, 0.0, 0.5) is void);
+	assert(intersect(&r, &s, 3.5, 8.0) is void);
+	assert(math::isclose(1.0, intersect(&r, &s, 0.0, 2.5) as f64));
+	assert(math::isclose(3.0, intersect(&r, &s, 1.5, 8.0) as f64));
 };
 
 type scene = struct {
@@ -136,7 +137,7 @@ fn trace_ray(scene: *scene, r: *ray, tmin: f64, tmax: f64) color::color = {
 
 	for (let i: size = 0; i < len(scene.spheres); i += 1) {
 		const sp = scene.spheres[i];
-		match (intersect_new(r, sp, tmin, tmax)) {
+		match (intersect(r, sp, tmin, tmax)) {
 		case void => continue;
 		case let t: f64 =>
 			tmax = t;
@@ -198,7 +199,7 @@ fn trace_ray(scene: *scene, r: *ray, tmin: f64, tmax: f64) color::color = {
 
 export fn main() void = {
 	const s1 = alloc(sphere{
-		center=vec3::new(0.0, -1.0, -3.0),
+		center=vec3::new(0.0, -1.0, 3.0),
 		radius=1.0,
 		color=color::new(255, 0, 0),
 	});
@@ -223,11 +224,21 @@ export fn main() void = {
 		background=color::WHITE,
 	};
 
-	let c = canvas::new(640, 480);
+	const c = canvas::new(640, 480);
 	defer canvas::finish(&c);
 
-	const r = ray{o=vec3::new(0.0, 1.5, 0.0), d=vec3::new(0.0, 0.0, 1.0)};
-	trace_ray(&scene, &r, 0.0, 10.0);
+	const origin = vec3::new(0.0, 0.0, 0.0);
+	const v = viewport::new(c, 1.0, 1.0);
+	let it = viewport::iterate(&v);
+	for (true) {
+		match (viewport::next(&it)) {
+		case void => break;
+		case let p: viewport::point =>
+			const r = ray{o=origin, d=vec3::sub(p.on_viewport, origin)};
+			const col = trace_ray(&scene, &r, 1.0, math::INF);
+			canvas::putpixel(&c, p.cx, p.cy, col);
+		};
+	};
 
 	const mode = fs::mode::USER_RW | fs::mode::GROUP_R | fs::mode::OTHER_R | fs::mode::REG;
 	const file = os::create("image.ppm", mode, fs::flag::WRONLY)!;

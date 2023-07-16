@@ -86,7 +86,7 @@ fn testcanvas() canvas = {
 // Stores a canvas in PPM format under the given path. If the file already exists, it will be
 // overwritten.
 export fn write(h: io::handle, c: *canvas) (void | io::error) = {
-	fmt::fprintln(h, "P3")?;
+	fmt::fprintln(h, "P6")?;
 	fmt::fprintfln(h, "{} {}", c.width, c.height)?;
 	fmt::fprintln(h, "255")?;
 	for (let buf = c.data; len(buf) > 0) {
@@ -104,6 +104,6 @@ export fn write(h: io::handle, c: *canvas) (void | io::error) = {
 
 	write(&buf, &c)!;
 	const got = strings::fromutf8(bufio::buffer(&buf))!;
-	const want = "P3\n3 2\n255\nabcdefghijklmnopqr";
+	const want = "P6\n3 2\n255\nabcdefghijklmnopqr";
 	assert(got == want);
 };
