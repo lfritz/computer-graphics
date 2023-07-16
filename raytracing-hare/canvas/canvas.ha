@@ -83,8 +83,7 @@ fn testcanvas() canvas = {
 	assert(eq(&c, &want));
 };
 
-// Stores a canvas in PPM format under the given path. If the file already exists, it will be
-// overwritten.
+// Store the canvas in PPM format using the given handle.
 export fn write(h: io::handle, c: *canvas) (void | io::error) = {
 	fmt::fprintln(h, "P6")?;
 	fmt::fprintfln(h, "{} {}", c.width, c.height)?;

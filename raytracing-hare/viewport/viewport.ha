@@ -5,7 +5,7 @@ use vec3;
 // The viewport is a rectangle in 3-D space through which we're looking at the scene. Pixels on
 // the canvas can be mapped to points in the viewport.
 export type viewport = struct {
-	c: canvas::canvas,
+	c: *canvas::canvas,
 	f: f64, // ratio of viewport coordinates : canvas coordinates
 	d: f64, // distance from origin
 };
@@ -13,7 +13,7 @@ export type viewport = struct {
 // Returns a new viewport for the given canvas, where w is the viewport's width and d is the
 // distance from the origin. The viewport's height is calculated so the viewport's aspect ratio
 // matches the canvas's.
-export fn new(c: canvas::canvas, w: f64, d: f64) viewport = {
+export fn new(c: *canvas::canvas, w: f64, d: f64) viewport = {
 	return viewport{
 		c=c,
 		f=w / c.width: f64,
@@ -24,7 +24,7 @@ export fn new(c: canvas::canvas, w: f64, d: f64) viewport = {
 @test fn new() void = {
 	const c = canvas::new(3, 2);
 	defer canvas::finish(&c);
-	const v = new(c, 6.0, 2.5);
+	const v = new(&c, 6.0, 2.5);
 	assert(v.f == 2.0);
 	assert(viewport_width(&v) == 6.0);
 	assert(viewport_height(&v) == 4.0);
@@ -51,7 +51,7 @@ fn canvas_to_viewport(v: *viewport, cx: int, cy: int) vec3::vec3 = {
 @test fn canvas_to_viewport() void = {
 	const c = canvas::new(3, 2);
 	defer canvas::finish(&c);
-	const v = new(c, 6.0, 2.5);
+	const v = new(&c, 6.0, 2.5);
 	const cases: [](int, int, vec3::vec3) = [
 		(0, 0, vec3::new(-2.0, -1.0, 2.5)),
 		(1, 0, vec3::new( 0.0, -1.0, 2.5)),
@@ -111,7 +111,7 @@ export fn next(i: *iterator) (point | void) = {
 	// create 3x2 canvas, viewport, iterator
 	const c = canvas::new(3, 2);
 	defer canvas::finish(&c);
-	const v = new(c, 6.0, 2.5);
+	const v = new(&c, 6.0, 2.5);
 	const it = iterate(&v);
 
 	// check the first one
