@@ -260,14 +260,21 @@ fn light_intensity(n: vec3::vec3, l: vec3::vec3, i: f64) f64 = {
 	assert(math::isclose(light_intensity(vec3::new(0.0, 1.0, 1.0), l, i), i * attenuation));
 };
 
-fn compute_lighting(p: vec3::vec3, n: vec3::vec3, ls: *lights) f64 = {
+fn compute_lighting(p: vec3::vec3, n: vec3::vec3, sc: *scene) f64 = {
+	const ls = sc.lights;
 	let result = ls.ambient;
 	for (let i: size = 0; i < len(ls.directional); i += 1) {
-		result += light_intensity(n, ls.directional[i].l, ls.directional[i].i);
+		const r = ray{o=p, d=ls.directional[i].l};
+		if (trace_ray(sc.spheres, &r, 0.001, math::INF) is void) {
+			result += light_intensity(n, ls.directional[i].l, ls.directional[i].i);
+		};
 	};
 	for (let i: size = 0; i < len(ls.point); i += 1) {
 		const l = vec3::sub(ls.point[i].p, p);
-		result += light_intensity(n, l, ls.point[i].i);
+		const r = ray{o=p, d=l};
+		if (trace_ray(sc.spheres, &r, 0.001, 1.0) is void) {
+			result += light_intensity(n, l, ls.point[i].i);
+		};
 	};
 	return result;
 };
@@ -279,53 +286,78 @@ fn compute_lighting(p: vec3::vec3, n: vec3::vec3, ls: *lights) f64 = {
 	const above = vec3::new(1.0, 8.0, 3.0);
 	const below = vec3::new(1.0, -8.0, 3.0);
 
-	// just ambient light
-	const ls = lights{
-		ambient=0.1,
-		directional=[],
-		point=[],
+	let s1 = sphere{
+		center=vec3::new(1.0, 1.0, 3.0),
+		radius=1.0,
+		color=color::WHITE,
 	};
-	assert(math::isclose(compute_lighting(p, up, &ls), 0.1));
+	let s2 = sphere{
+		center=vec3::new(1.0, -2.0, 3.0),
+		radius=1.0,
+		color=color::WHITE,
+	};
+	let s3 = sphere{
+		center=vec3::new(1.0, 10.0, 3.0),
+		radius=1.0,
+		color=color::WHITE,
+	};
+	let s4 = sphere{
+		center=vec3::new(1.0, 3.0, 3.0),
+		radius=1.0,
+		color=color::WHITE,
+	};
+
+	let sc = scene{
+		spheres=[&s1],
+		lights=lights{
+			ambient=0.1,
+			directional=[],
+			point=[],
+		},
+		background=color::BLACK,
+	};
+
+	// just ambient light
+	assert(math::isclose(compute_lighting(p, up, &sc), 0.1));
 
 	// one directional light
-	const ls = lights{
-		ambient=0.1,
-		directional=[directional_light{l=up, i=0.2}],
-		point=[],
-	};
-	assert(math::isclose(compute_lighting(p, up, &ls), 0.3));
+	sc.lights.directional = [directional_light{l=up, i=0.2}];
+	assert(math::isclose(compute_lighting(p, up, &sc), 0.3));
 
 	// one point light
-	const ls = lights{
-		ambient=0.1,
-		directional=[],
-		point=[point_light{p=above, i=0.3}],
-	};
-	assert(math::isclose(compute_lighting(p, up, &ls), 0.4));
+	sc.lights.directional = [];
+	sc.lights.point = [point_light{p=above, i=0.3}];
+	assert(math::isclose(compute_lighting(p, up, &sc), 0.4));
 
 	// one each
-	const ls = lights{
-		ambient=0.1,
-		directional=[directional_light{l=up, i=0.2}],
-		point=[point_light{p=above, i=0.3}],
-	};
-	assert(math::isclose(compute_lighting(p, up, &ls), 0.6));
+	sc.lights.directional = [directional_light{l=up, i=0.2}];
+	sc.lights.point = [point_light{p=above, i=0.3}];
+	assert(math::isclose(compute_lighting(p, up, &sc), 0.6));
 
 	// three each
-	const ls = lights{
-		ambient=0.1,
-		directional=[
-			directional_light{l=up, i=0.05},
-			directional_light{l=up, i=0.15},
-			directional_light{l=down, i=0.15},
-		],
-		point=[
-			point_light{p=above, i=0.25},
-			point_light{p=above, i=0.35},
-			point_light{p=below, i=0.35},
-		],
-	};
-	assert(math::isclose(compute_lighting(p, up, &ls), 0.9));
+	sc.lights.directional = [
+		directional_light{l=up, i=0.05},
+		directional_light{l=up, i=0.15},
+		directional_light{l=down, i=0.15},
+	];
+	sc.lights.point = [
+		point_light{p=above, i=0.25},
+		point_light{p=above, i=0.35},
+		point_light{p=below, i=0.35},
+	];
+	assert(math::isclose(compute_lighting(p, up, &sc), 0.9));
+
+	// second sphere below: no effect
+	sc.spheres = [&s1, &s2];
+	assert(math::isclose(compute_lighting(p, up, &sc), 0.9));
+
+	// second sphere at y=10: blocks directional lights
+	sc.spheres = [&s1, &s3];
+	assert(math::isclose(compute_lighting(p, up, &sc), 0.7));
+
+	// second sphere at y=3: blocks point and directional lights
+	sc.spheres = [&s1, &s4];
+	assert(math::isclose(compute_lighting(p, up, &sc), 0.1));
 };
 
 fn raytrace_pixel(sc: *scene, p: vec3::vec3) color::color = {
@@ -335,7 +367,7 @@ fn raytrace_pixel(sc: *scene, p: vec3::vec3) color::color = {
 		case void => return sc.background;
 		case let h: hit => {
 			const normal = vec3::sub(h.point, h.sphere.center);
-			const intensity = compute_lighting(h.point, normal, &sc.lights);
+			const intensity = compute_lighting(h.point, normal, sc);
 			return color::mul(intensity, h.sphere.color);
 		};
 	};
